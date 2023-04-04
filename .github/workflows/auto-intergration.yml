@@ -58,7 +58,6 @@ jobs:
       - build-order-7
       - build-order-8
       - build-order-9
-    uses: deepin-community/Repository-Integration/.github/workflows/04-auto-test.yml@master
     if: |
       always() && !cancelled() &&
       (needs.parsec_intergration.result == 'success') && (needs.ouput_message.result != 'failure' ) &&
@@ -72,10 +71,30 @@ jobs:
       (needs.build-order-7.result == 'success' || needs.build-order-7.result == 'skipped') &&
       (needs.build-order-8.result == 'success' || needs.build-order-8.result == 'skipped') &&
       (needs.build-order-9.result == 'success' || needs.build-order-9.result == 'skipped')
-    with:
-      topic: test-intergration-pr-${{ github.event.number }}
-      packages: ${{ needs.parsec_intergration.outputs.all_build_task }}
-      deploy: ${{ needs.parsec_intergration.outputs.deploy }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: create issue and link project
+        uses: peeweep-test/Repository-Integration/.github/workflows/issue-project-manager.yml@master
+        with:
+          repo: linuxdeepin/developer-center
+          issueid: 3961 #for test
+          project: 21 # https://github.com/orgs/linuxdeepin/projects/21/views/1
+          assignees: "Zeno-sole, hudeng-go"
+          title: "[Deepin Integration]~[${{ needs.parsec_intergration.outputs.milestone }}] ${{ needs.parsec_intergration.outputs.intergration_message }}"
+          status: "In progress"
+          milestone: ${{ needs.parsec_intergration.outputs.milestone }}
+          labels: Project:integrated
+          intergrationinfo: ${{ needs.parsec_intergration.outputs.intergrationinfo }}
+          changelog: ${{ needs.parsec_intergration.outputs.changelog }}
+          influence: ${{ needs.parsec_intergration.outputs.influence }}
+          testrepoaddr: "deb [trusted=yes] https://ci.deepin.com/repo/obs/deepin:/CI:/TestingIntegration:/test-intergration-pr-${{ github.event.number }}/testing/ ./"
+
+      - name: starting auto test
+        uses: deepin-community/Repository-Integration/.github/workflows/04-auto-test.yml@master
+        with:
+          topic: test-intergration-pr-${{ github.event.number }}
+          packages: ${{ needs.parsec_intergration.outputs.all_build_task }}
+          deploy: ${{ needs.parsec_intergration.outputs.deploy }}
 
   deploy-repo:
     name: merge topic repo
